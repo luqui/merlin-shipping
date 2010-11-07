@@ -55,7 +55,7 @@ def print_submit_form():
     print """
            </td></tr>
         <tr><td>Name</td><td><input type='text' name='name'></input></td></tr>
-        <tr><td>Address</td><td><textarea rows="2" cols="50" name='address'></textarea></td></tr>
+        <tr><td>Address</td><td><textarea rows="2" cols="50" name='address' id='address'></textarea><input type='button' id='normalize' value='Normalize'></input></td></tr>
        </table>
        <input type="submit"></input>
       </form>
@@ -66,8 +66,31 @@ print """
  <head>
   <style>
    table { border: 1px solid black }
-
   </style>
+  <script src='http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js'></script>
+  <script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=false"></script> 
+  <script>
+
+
+$(function () {
+    
+    var geocoder = new google.maps.Geocoder();
+
+    $('#normalize').click(function(e) {
+        var addr = $('#address').val();
+        geocoder.geocode( { 'address': addr }, function (results, status) {
+            if (status == google.maps.GeocoderStatus.OK) {
+                $('#address').val(results[0].formatted_address);
+            }
+            else {
+                alert("Geocode didn't work: " + status);
+            }
+        });
+    });
+
+});
+
+  </script>
  </head>
  <body>
 """

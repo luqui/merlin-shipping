@@ -5,8 +5,7 @@ import cgi
 import cgitb
 import pickle
 import json
-import urllib
-import urllib2
+import base64
 cgitb.enable()
 
 print "Content-type: text/html"
@@ -19,22 +18,31 @@ item_types = ['Bags', 'Jars', 'Travel Packs', 'Tuning Forks'];
 def __main__():
     if 'submit' in form:
         order = Relation(["Type", "Quantity"], [(typ, form[typ].value) for typ in item_types if typ in form])
-        entry = Relation.fromTuple(Tuple(Order=order, Address=format_address(form['address'].value), Name=form['name'].value))
+        entry = Relation.fromTuple(Tuple(Order=order, Address=form['address'].value, Name=form['name'].value))
+        value = base64.b64encode(entry.__repr__())
         print entry.renderHTML()
-        print "<form><input type='hidden' name='confirm' value='yes'></input><input type='submit' value='Confirm'></input></form>"
+        print "<form><input type='hidden' name='confirm' value='%(value)s'></input><input type='submit' value='Confirm'></input></form>" % { 'value': value }
     elif 'confirm' in form:
-        print "Confirm"
+        bvalue = form['confirm'].value
+        entry = eval(base64.b64decode(bvalue))
+        tab = load_table()
+        newtab = tab | entry
+        save_table(newtab)
+        print newtab.renderHTML()
     else:
+        load_table()
         print_submit_form()
 
-def format_address(addr):
-    url = 'http://maps.googleapis.com/maps/api/geocode/json'
-    values = { 'address': addr, 'sensor': 'false' }
-    valstr = urllib.urlencode(values)
-    req = urllib2.Request(url + "?" + valstr)
-    response = urllib2.urlopen(req).read()
-    return json.loads(response)['results'][0]['formatted_address']
-    
+def save_table(table):
+    with open('database', 'w') as fh:
+        fh.write(table.__repr__())
+
+def load_table():
+    try:
+        fh = open('database', 'r')
+        return eval(fh.read())
+    except:
+        return Relation(["Order", "Name", "Address"], [])
 
 def print_input_table():
     print "<table>"

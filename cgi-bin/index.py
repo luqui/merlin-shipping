@@ -72,9 +72,7 @@ def print_submit_form():
 print """
 <html>
  <head>
-  <style>
-   table { border: 1px solid black }
-  </style>
+  <link rel="stylesheet" href="plainold.css" type="text/css" />
   <script src='http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js'></script>
   <script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=false"></script> 
   <script>

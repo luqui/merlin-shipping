@@ -1,0 +1,104 @@
+The Merlin's Herbal Roots Shipping Site is a web interface to a database of
+shipping information for Merlin's clients.
+
+The database is stored on a public server, and the web interface makes
+queries to the database in real time using an AJAX protocol.
+
+The Database
+------------
+The database stores the set of all transactions that go through Merlin's
+Herbal Magic.  Transactions indicate any of:
+
+    * An order being placed and paid for by a customer
+    * An order being shipped
+    * A delivery of supplies coming in
+
+All transactions are marked with a timestamp and a field for
+miscellaneous notes.
+
+The database also keeps track of the current inventory of supplies.
+
+An order placement transaction has the following data:
+
+    * The customer placing the order
+    * The types and quantity of products ordered
+    * The shipping address
+    * The amount the customer paid
+
+A shipped order transaction has only a reference to the placement
+transaction.
+
+A delivery order has the quantity of supples delivered.
+
+We store the following information on each customer:
+
+    * Name
+    * Address
+    * Miscellaneous notes
+
+The products available are:
+
+    * Bags of herbal root mix
+    * Jars of herbal root mix
+    * Travel packs
+    * Tuning forks
+
+
+The Web Interface
+-----------------
+The web interface is a simple navigation bar layout.  The pages
+available are:
+
+    * Enter transaction
+    * Search transactions
+    * Search customers
+    * Pending orders
+
+The enter transaction page is a simple nested-table layout for entering
+any transaction into the database.  The timestamp field is always set to
+the current time. 
+
+The search transactions page shows the standard representation of a
+transaction with a dropdown in place of each element.  The dropdown text
+starts empty, but when you click on it, it shows a list of constraint
+types, depending on the type of field.  When you select a constraint,
+an appropriate UI appears for specifying the parameters of that
+constraint, and another empty dropdown appears below it.  All constraints 
+are ANDed together.  For nested data and references, another blank table
+UI for that type counts as a constraint.
+
+Below this example transaction, in real time, the first several search
+results are displayed, from newest to oldest.
+
+The search customers page works exactly the same was as the search
+transactions page, except that it searches the customers table.
+
+Pending orders shows a list of all the order placement transactions that
+do not have a corresponding order shipped transaction.
+
+Search constraints
+------------------
+
+For numeric fields:
+
+    * Greater than some number.
+    * Less than some number.
+    * Equal to some number.
+
+For timestamp:
+
+    * Before, some date.
+    * After, some date.
+
+For name, address, and misc. notes fields:
+
+    * Contains some text.
+
+For record/tuple types, show the standard table interface with
+constraints for each of the parameters.  This interface does not
+duplicate itself below.
+
+For types with multiple options, show an unselected radio button for
+each type.  When one of the types is selected, show its constraint
+interface.  This interface does not duplicate itself below when an
+option is selected, like most constraint interfaces do.

@@ -4,7 +4,24 @@ var url = require('url');
 var fs = require('fs');
 var querystring = require('querystring');
 
-var database = {};
+var database = function() {
+    try {
+        console.log("Reading database");
+        return JSON.parse(fs.readFileSync("database.json"));
+    }
+    catch (e) {
+        console.log("Reading database failed (" + e + ").  Initializing new");
+        return {};
+    }
+}();
+
+process.on('exit', function() {
+    console.log("Writing database");
+    fs.writeFileSync("database.json", JSON.stringify(database));
+}); 
+
+process.on('SIGINT', process.exit);
+process.on('SIGTERM', process.exit);
 
 http.createServer(function (req, res) {
     console.log("Got URL: " + req.url);

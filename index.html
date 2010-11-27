@@ -10,8 +10,8 @@
 
   <script>
 
-var ip = '184.73.249.123:8080';
-//var ip = '127.0.0.1:8080';
+//var ip = '184.73.249.123:8080';
+var ip = '127.0.0.1:8080';
 
 function Request(cmd, arg, callback) {
     $.getJSON('http://' + ip + '/' + cmd + '?callback=?', arg, callback);
@@ -96,12 +96,24 @@ function Field(field, ui) {
     };
 }
 
+function ToggleShipped(row) {
+    console.log(row);
+    var button = Element('input', { type: 'button', value: row.shipped, click: function() {
+        row.shipped = row.shipped == "Pending" ? "Shipped" : "Pending";
+        Request('store', { row: row }, function(data) {
+            button.val(row.shipped);
+        });
+    }});
+    return button;
+}
+
 var orderInput = TableVector({ bags: TextInput, jars: TextInput, packs: TextInput, forks: TextInput });
 
 var columns = [
     { header: 'Name',    input: Field('name',    TextInput),  output: Field('name', TextOutput) },
     { header: 'Address', input: Field('address', TextInput),  output: Field('address', TextOutput) },
     { header: 'Order',   input: Field('order',   orderInput), output: Field('order', CompactVector) },
+    { header: 'Shipped', input: ConstInput({shipped: "Pending"}), output: ToggleShipped },
 ];
 
 var protoRow = { name: '', address: '', order: { bags: '', jars: '', packs: '', forks: '' } };

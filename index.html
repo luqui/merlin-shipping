@@ -1,11 +1,24 @@
 <html>
  <head>
   <title>Merlin's Herbal Magic Shipping Manager</title>
+
   <script src='http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js'></script>
 
   <style>
+    table {
+        border-collapse: collapse;
+    }
+    td {
+        border: 1px solid black;
+        padding: 3px;
+    }
+    thead {
+        background: lightblue;
+        font-weight: bold;
+    }
     tr.highlighted { background: #bfb }
-    tr.pending     { background: #fa7 }
+    .pending     { background: #fa7 }
+    tr.unsubmitted { background: gray }
   </style>
 
   <script>
@@ -96,14 +109,21 @@ function Field(field, ui) {
     };
 }
 
+function SetButton(button, row) {
+    button.val(row.shipped);
+    if (row.shipped == "Shipped") button.removeClass("pending") 
+    else button.addClass("pending");
+}
+
 function ToggleShipped(row) {
     console.log(row);
-    var button = Element('input', { type: 'button', value: row.shipped, click: function() {
+    var button = Element('input', { type: 'button', click: function() {
         row.shipped = row.shipped == "Pending" ? "Shipped" : "Pending";
         Request('store', { row: row }, function(data) {
-            button.val(row.shipped);
+            SetButton(button, row);
         });
     }});
+    SetButton(button, row);
     return button;
 }
 
@@ -113,7 +133,7 @@ var columns = [
     { header: 'Name',    input: Field('name',    TextInput),  output: Field('name', TextOutput) },
     { header: 'Address', input: Field('address', TextInput),  output: Field('address', TextOutput) },
     { header: 'Order',   input: Field('order',   orderInput), output: Field('order', CompactVector) },
-    { header: 'Shipped', input: ConstInput({shipped: "Pending"}), output: ToggleShipped },
+    { header: 'Status',  input: ConstInput({shipped: "Pending"}), output: ToggleShipped },
 ];
 
 var protoRow = { name: '', address: '', order: { bags: '', jars: '', packs: '', forks: '' } };
@@ -142,11 +162,11 @@ function InputRow() {
             var p = tr.parent();
             tr.remove();
             var lit = LiteralRow(row);
-            lit.addClass("pending");
+            lit.addClass("unsubmitted");
             p.append(lit);
             p.append(InputRow());
             Request('store', { row: row }, function(data) {
-                lit.removeClass("pending");
+                lit.removeClass("unsubmitted");
             });
         }})));
     

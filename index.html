@@ -19,6 +19,7 @@
     tr.highlighted { background: #bfb }
     .pending     { background: #fa7 }
     tr.unsubmitted { background: gray }
+    textarea { height: 12ex; width: 100% }
   </style>
 
   <script>
@@ -127,6 +128,10 @@ function ToggleShipped(row) {
     return button;
 }
 
+function TextAreaInput(text) {
+    return Element('textarea', { value: text });
+}
+
 var orderInput = TableVector({ bags: TextInput, jars: TextInput, packs: TextInput, forks: TextInput });
 
 var columns = [
@@ -134,6 +139,7 @@ var columns = [
     { header: 'Address', input: Field('address', TextInput),  output: Field('address', TextOutput) },
     { header: 'Order',   input: Field('order',   orderInput), output: Field('order', CompactVector) },
     { header: 'Status',  input: ConstInput({shipped: "Pending"}), output: ToggleShipped },
+    { header: 'Notes',   input: Field('notes', TextAreaInput), output: Field('notes', TextOutput) },
 ];
 
 var protoRow = { name: '', address: '', order: { bags: '', jars: '', packs: '', forks: '' } };

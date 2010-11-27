@@ -10,6 +10,10 @@
 
   <script>
 
+function Request(cmd, arg, callback) {
+    $.getJSON('http://184.73.249.123:8080/' + cmd + '?callback=?', arg, callback);
+}
+
 function Element(name, attrs) {
     var elt = $('<' + name + "/>", attrs);
     for (var i = 2; i < arguments.length; ++i) {
@@ -106,7 +110,7 @@ function InputRow() {
             lit.addClass("pending");
             p.append(lit);
             p.append(InputRow());
-            $.getJSON('http://184.73.249.123:8080/store?callback=?', { row: row }, function(data) {
+            Request('store', {row : row}, function(data) {
                 lit.removeClass("pending");
             });
         }})));
@@ -127,11 +131,21 @@ function MakeTable() {
     for (var i in columns) {
         headtr.append(Element('td', { text: columns[i].header }));
     }
-    return Element('table', {}, Element('thead', {}, headtr), Element('tbody', {}, InputRow()));
+    return Element('table', {}, Element('thead', {}, headtr), Element('tbody', {}));
 }
 
 $(function() {
-    $('#content').append(MakeTable());
+    var loading = Element('span', { text: 'Loading database' });
+    $('#content').append(loading);
+    Request('dump', {}, function(db) {
+        loading.remove();
+        var table = MakeTable();
+        $('#content').append(table);
+        for (var i in db) {
+            table.append(LiteralRow(db[i]));
+        }
+        table.append(InputRow());
+    });
 });
 
   </script>

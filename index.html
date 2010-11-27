@@ -10,8 +10,11 @@
 
   <script>
 
+var ip = '184.73.249.123:8080';
+//var ip = '127.0.0.1:8080';
+
 function Request(cmd, arg, callback) {
-    $.getJSON('http://184.73.249.123:8080/' + cmd + '?callback=?', arg, callback);
+    $.getJSON('http://' + ip + '/' + cmd + '?callback=?', arg, callback);
 }
 
 function Element(name, attrs) {
@@ -30,21 +33,27 @@ function ShowBag(bag) {
     return ret;
 }
 
+function WithValue(value, elt)
+{
+    elt.val = function() { return value };
+    return elt;
+}
+
 function TextInput() {
     return Element('input', { type: 'text' });
 }
 
 function TextOutput(val) {
-    return Element('span', { text: val });
+    return WithValue(val, Element('span', { text: val }));
 }
 
-function VectorInput(fields) {
-    return function() {
+function TableVector(fields) {
+    return function(val) {
         var table = Element('table', {});
         var eltable = {};
         for (var i in fields) {
-            eltable[i] = fields[i].input();
-            table.append(Element('tr', {}, Element('td', { text: fields[i].header }), Element('td', {}, eltable[i])));
+            eltable[i] = fields[i](val[i]);
+            table.append(Element('tr', {}, Element('td', { text: i }), Element('td', {}, eltable[i])));
         }
 
         table.val = function() {
@@ -52,7 +61,7 @@ function VectorInput(fields) {
             for (var i in fields) {
                 var val = eltable[i].val();
                 if (val != "") {
-                    ret[fields[i].field] = eltable[i].val();
+                    ret[i] = val;
                 }
             }
             return ret;
@@ -62,26 +71,40 @@ function VectorInput(fields) {
     };
 }
 
-function VectorOutput(val) {
-    return Element('span', { text: ShowBag(val) });
-}
-
-function NumericField(name) {
-    return { header: name, field: name, input: function() { return TextInput() } };
+function CompactVector(val) {
+    return WithValue(val, Element('span', { text: ShowBag(val) }));
 }
 
 function ConstInput(val) {
     return function() {
         var span = Element('span', {});
         span.val = function() { return val; };
+        return span;
     };
 }
 
+function Field(field, ui) {
+    return function (row) {
+        var r = ui(row[field]);
+        var elt = Element('span', {}, r);
+        elt.val = function() {
+            var rhash = {};
+            rhash[field] = r.val();
+            return rhash;
+        };
+        return elt;
+    };
+}
+
+var orderInput = TableVector({ bags: TextInput, jars: TextInput, packs: TextInput, forks: TextInput });
+
 var columns = [
-    { header: 'Name',    field: 'name',    input: TextInput, output: TextOutput },
-    { header: 'Address', field: 'address', input: TextInput, output: TextOutput },
-    { header: 'Order',   field: 'order',   input: VectorInput([NumericField('bags'), NumericField('jars'), NumericField('packs'), NumericField('forks')]), output: VectorOutput },
+    { header: 'Name',    input: Field('name',    TextInput),  output: Field('name', TextOutput) },
+    { header: 'Address', input: Field('address', TextInput),  output: Field('address', TextOutput) },
+    { header: 'Order',   input: Field('order',   orderInput), output: Field('order', CompactVector) },
 ];
+
+var protoRow = { name: '', address: '', order: { bags: '', jars: '', packs: '', forks: '' } };
 
 function UID() {
     var result = '';
@@ -92,7 +115,7 @@ function UID() {
 }
 
 function InputRow() {
-    var elts = columns.map(function (i) { return i.input() });
+    var elts = columns.map(function (i) { return i.input(protoRow) });
 
     var tr = Element('tr', { 'class': 'highlighted' });
     for (var i in elts) {
@@ -102,7 +125,7 @@ function InputRow() {
         Element('input', { type: 'button', click: function() {
             var row = { id: UID() };
             for (var i in columns) {
-                row[columns[i].field] = elts[i].val();
+                $.extend(row, elts[i].val());
             }
             var p = tr.parent();
             tr.remove();
@@ -110,7 +133,7 @@ function InputRow() {
             lit.addClass("pending");
             p.append(lit);
             p.append(InputRow());
-            Request('store', {row : row}, function(data) {
+            Request('store', { row: row }, function(data) {
                 lit.removeClass("pending");
             });
         }})));
@@ -121,7 +144,7 @@ function InputRow() {
 function LiteralRow(row) {
     var tr = Element('tr');
     for (var i in columns) {
-        tr.append(Element('td', {}, columns[i].output(row[columns[i].field])));
+        tr.append(Element('td', {}, columns[i].output(row)));
     }
     return tr;
 }

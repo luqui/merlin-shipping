@@ -100,7 +100,9 @@ function InputRow() {
                 row[columns[i].field] = elts[i].val();
             }
             var p = tr.parent();
-            $.getJSON('http://127.0.0.1:8080/store', { row: row });
+            $.getJSON('http://127.0.0.1:8080/store?callback=?', { row: row }, function(data) {
+                alert(data);
+            });
             tr.remove();
             p.append(LiteralRow(row));
             p.append(InputRow());

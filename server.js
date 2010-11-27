@@ -13,8 +13,8 @@ http.createServer(function (req, res) {
         var storeReq = querystring.parse(storeRow[1]);
         console.log("Req = " + JSON.stringify(storeReq));
         database[storeReq.row.id] = storeReq.row;
-        res.writeHead(200, {'Content-type': 'text/plain'});
-        res.end('Received transaction');
+        res.writeHead(200, {'Content-type': 'text/javascript'});
+        res.end(storeReq.callback + "(\"success\")");
         return;
     }
 }).listen(8080, '0.0.0.0');

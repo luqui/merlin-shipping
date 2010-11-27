@@ -1,0 +1,138 @@
+<html>
+ <head>
+  <title>Merlin's Herbal Magic Shipping Manager</title>
+  <script src='http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js'></script>
+
+  <style>
+    tr.highlighted { background: #bfb }
+  </style>
+
+  <script>
+
+function Element(name, attrs) {
+    var elt = $('<' + name + "/>", attrs);
+    for (var i = 2; i < arguments.length; ++i) {
+        elt.append(arguments[i]);
+    }
+    return elt;
+}
+
+function ShowBag(bag) {
+    var ret = "";
+    for (var i in bag) {
+        ret += bag[i] + " " + i + ", ";
+    }
+    return ret;
+}
+
+function TextInput() {
+    return Element('input', { type: 'text' });
+}
+
+function TextOutput(val) {
+    return Element('span', { text: val });
+}
+
+function VectorInput(fields) {
+    return function() {
+        var table = Element('table', {});
+        var eltable = {};
+        for (var i in fields) {
+            eltable[i] = fields[i].input();
+            table.append(Element('tr', {}, Element('td', { text: fields[i].header }), Element('td', {}, eltable[i])));
+        }
+
+        table.val = function() {
+            var ret = {};
+            for (var i in fields) {
+                var val = eltable[i].val();
+                if (val != "") {
+                    ret[fields[i].field] = eltable[i].val();
+                }
+            }
+            return ret;
+        };
+
+        return table;
+    };
+}
+
+function VectorOutput(val) {
+    return Element('span', { text: ShowBag(val) });
+}
+
+function NumericField(name) {
+    return { header: name, field: name, input: function() { return TextInput() } };
+}
+
+function ConstInput(val) {
+    return function() {
+        var span = Element('span', {});
+        span.val = function() { return val; };
+    };
+}
+
+var columns = [
+    { header: 'Name',    field: 'name',    input: TextInput, output: TextOutput },
+    { header: 'Address', field: 'address', input: TextInput, output: TextOutput },
+    { header: 'Order',   field: 'order',   input: VectorInput([NumericField('bags'), NumericField('jars'), NumericField('packs'), NumericField('forks')]), output: VectorOutput },
+];
+
+function UID() {
+    var result = '';
+    for (var i = 0; i < 32; ++i) {
+        result += Math.floor(Math.random()*16).toString(16);
+    }
+    return result;
+}
+
+function InputRow() {
+    var elts = columns.map(function (i) { return i.input() });
+
+    var tr = Element('tr', { 'class': 'highlighted' });
+    for (var i in elts) {
+        tr.append(Element('td', {}, elts[i]));
+    }
+    tr.append(Element('td', {}, 
+        Element('input', { type: 'button', click: function() {
+            var row = { id: UID() };
+            for (var i in columns) {
+                row[columns[i].field] = elts[i].val();
+            }
+            var p = tr.parent();
+            $.getJSON('http://127.0.0.1:8080/store', { row: row });
+            tr.remove();
+            p.append(LiteralRow(row));
+            p.append(InputRow());
+        }})));
+    
+    return tr;                   
+}
+
+function LiteralRow(row) {
+    var tr = Element('tr');
+    for (var i in columns) {
+        tr.append(Element('td', {}, columns[i].output(row[columns[i].field])));
+    }
+    return tr;
+}
+
+function MakeTable() {
+    var headtr = Element('tr', {});
+    for (var i in columns) {
+        headtr.append(Element('td', { text: columns[i].header }));
+    }
+    return Element('table', {}, Element('thead', {}, headtr), Element('tbody', {}, InputRow()));
+}
+
+$(function() {
+    $('#content').append(MakeTable());
+});
+
+  </script>
+ </head>
+ <body>
+  <div id="content">
+  </div>
+ </body>
+</html>

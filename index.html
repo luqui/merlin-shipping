@@ -61,6 +61,11 @@ function TextOutput(val) {
     return WithValue(val, Element('span', { text: val }));
 }
 
+function MultilineTextOutput(val) {
+    if (!val) val = "";
+    return WithValue(val, Element('span', { html: val.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g,"<br/>") }));
+}
+
 function TableVector(fields) {
     return function(val) {
         var table = Element('table', {});
@@ -136,10 +141,10 @@ var orderInput = TableVector({ bags: TextInput, jars: TextInput, packs: TextInpu
 
 var columns = [
     { header: 'Name',    input: Field('name',    TextInput),  output: Field('name', TextOutput) },
-    { header: 'Address', input: Field('address', TextInput),  output: Field('address', TextOutput) },
+    { header: 'Address', input: Field('address', TextAreaInput), output: Field('address', MultilineTextOutput) },
     { header: 'Order',   input: Field('order',   orderInput), output: Field('order', CompactVector) },
     { header: 'Status',  input: ConstInput({shipped: "Pending"}), output: ToggleShipped },
-    { header: 'Notes',   input: Field('notes', TextAreaInput), output: Field('notes', TextOutput) },
+    { header: 'Notes',   input: Field('notes', TextAreaInput), output: Field('notes', MultilineTextOutput) },
 ];
 
 var protoRow = { name: '', address: '', order: { bags: '', jars: '', packs: '', forks: '' } };

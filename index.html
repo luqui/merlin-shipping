@@ -53,8 +53,8 @@ function WithValue(value, elt)
     return elt;
 }
 
-function TextInput() {
-    return Element('input', { type: 'text' });
+function TextInput(val) {
+    return Element('input', { type: 'text', value: val });
 }
 
 function TextOutput(val) {
@@ -126,7 +126,6 @@ function SetButton(button, row) {
 }
 
 function ToggleShipped(row) {
-    console.log(row);
     var button = Element('input', { type: 'button', click: function() {
         row.shipped = row.shipped == "Pending" ? "Shipped " + FormatDate(new Date()) : "Pending";
         Request('store', { row: row }, function(data) {
@@ -138,7 +137,7 @@ function ToggleShipped(row) {
 }
 
 function TextAreaInput(text) {
-    return Element('textarea', { value: text });
+    return Element('textarea', { text: text });
 }
 
 var orderInput = TableVector({ bags: TextInput, jars: TextInput, packs: TextInput, forks: TextInput });
@@ -161,8 +160,9 @@ function UID() {
     return result;
 }
 
-function InputRow() {
-    var elts = columns.map(function (i) { return i.input(protoRow) });
+function InputRow(row) {
+    if (!row) { row = protoRow }
+    var elts = columns.map(function (i) { return i.input(row) });
 
     var tr = Element('tr', { 'class': 'highlighted' });
     for (var i in elts) {
@@ -206,15 +206,37 @@ function MakeTable() {
 
 $(function() {
     var loading = Element('span', { text: 'Loading database' });
+    var currentInputRow;
+    var table;
+
     $('#content').append(loading);
     Request('dump', {}, function(db) {
         loading.remove();
-        var table = MakeTable();
+        table = MakeTable();
         $('#content').append(table);
         for (var i in db) {
             table.append(LiteralRow(db[i]));
         }
-        table.append(InputRow());
+        currentInputRow = InputRow();
+        table.append(currentInputRow);
+    });
+
+    $('#fetch_transaction').click(function () {
+        var tid = $('#transaction_id').val().replace(/^\s*/,'').replace(/\s*$/,'');
+        Request('get_paypal_transaction', { transaction_id: tid }, function (transaction) {
+            if (transaction.ACK == "Success") {
+                $('#paypal_status').text('');
+                if (currentInputRow) { currentInputRow.remove(); }
+                currentInputRow = InputRow($.extend({}, protoRow, { 
+                    name: transaction.SHIPTONAME, 
+                    address: transaction.SHIPTOSTREET + "\n" + transaction.SHIPTOCITY + ", " + transaction.SHIPTOSTATE + " " + transaction.SHIPTOZIP
+                }));
+                table.append(currentInputRow);
+            }
+            else {
+                $('#paypal_status').text(transaction.L_LONGMESSAGE0);
+            }
+        });
     });
 });
 
@@ -223,5 +245,7 @@ $(function() {
  <body>
   <div id="content">
   </div>
+  <p><b>From PayPal transaction ID:</b><input type="text" id="transaction_id" /><input type="button" id="fetch_transaction" value="Go fetch!" /></p>
+  <p style="color: red" id="paypal_status"></p>
  </body>
 </html>

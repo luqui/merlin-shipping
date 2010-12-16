@@ -4,6 +4,11 @@ var url = require('url');
 var fs = require('fs');
 var querystring = require('querystring');
 
+var credentials = function() {
+    console.log("Loading credentials");
+    return JSON.parse(fs.readFileSync("api-keys"));
+}();
+
 var database = function() {
     try {
         console.log("Reading database");
@@ -23,32 +28,59 @@ process.on('exit', function() {
 process.on('SIGINT', process.exit);
 process.on('SIGTERM', process.exit);
 
+var merge = function(a,b) {
+    var r = {};
+    for (var k in a) { r[k] = a[k] }
+    for (var k in b) { r[k] = b[k] }
+    return r;
+}
+
 var commands = {
-    store: function(req) {
+    store: function(req, cc) {
         database[req.row.id] = req.row;
-        return {};
+        cc({});
     },
-    dump: function(req) {
-        return database;
+    dump: function(req, cc) {
+        cc(database);
     },    
+    get_paypal_transaction: function(input, cc) {
+        var req = merge(credentials, {
+            VERSION: '51.0',
+            METHOD: 'GetTransactionDetails',
+            TRANSACTIONID: input.transaction_id,
+        });
+        var query = querystring.stringify(req);
+        var client = http.createClient(443, 'api-3t.paypal.com', true);
+        var req = client.request('POST', '/nvp', {
+            'Host': 'api-3t.paypal.com',
+            'Content-Length': query.length
+        });
+        req.write(query);
+        req.end();
+        req.on('response', function(res) {
+            res.on('data', function (chunk) {
+                cc(querystring.parse(chunk));
+            });
+        });
+    },
 };
 
-function errorOut(res, msg) {
+
+var errorOut = function (res, msg) {
     res.writeHead(500, {'Content-type': 'text/plain'});
     res.end(msg);
 }
 
 http.createServer(function (req, res) {
-    console.log("Got URL: " + req.url);
-    
     var match = /^\/(\w+)\?(.*)/.exec(req.url);
     if (match) {
         var req = querystring.parse(match[2]);
         var cmd = commands[match[1]];
         if (cmd) {
-            var ret = cmd(req);
-            res.writeHead(200, {'Content-type': 'text/javascript'});
-            res.end(req.callback + "(" + JSON.stringify(ret) + ")");
+            cmd(req, function (ret) {
+                res.writeHead(200, {'Content-type': 'text/javascript'});
+                res.end(req.callback + "(" + JSON.stringify(ret) + ")");
+            });
         }
         else {
             errorOut(res, "Invalid command");

@@ -115,16 +115,20 @@ function Field(field, ui) {
     };
 }
 
+function FormatDate(d) {
+    return d.getMonth() + "/" + d.getDay() + "/" + d.getFullYear();
+}
+
 function SetButton(button, row) {
     button.val(row.shipped);
-    if (row.shipped == "Shipped") button.removeClass("pending") 
+    if (row.shipped != "Pending") button.removeClass("pending") 
     else button.addClass("pending");
 }
 
 function ToggleShipped(row) {
     console.log(row);
     var button = Element('input', { type: 'button', click: function() {
-        row.shipped = row.shipped == "Pending" ? "Shipped" : "Pending";
+        row.shipped = row.shipped == "Pending" ? "Shipped " + FormatDate(new Date()) : "Pending";
         Request('store', { row: row }, function(data) {
             SetButton(button, row);
         });

@@ -124,7 +124,7 @@ function Field(field, ui) {
 }
 
 function FormatDate(d) {
-    return d.getMonth() + "/" + d.getDay() + "/" + d.getFullYear();
+    return (d.getMonth()+1) + "/" + d.getDate() + "/" + d.getFullYear();
 }
 
 function SetButton(button, row) {

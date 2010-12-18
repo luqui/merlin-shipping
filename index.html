@@ -22,6 +22,7 @@
     textarea { height: 12ex; width: 100% }
     a { text-decoration: none }
     a:hover { text-decoration: underline }
+    div.inventory { float: left }
   </style>
 
   <script>
@@ -136,7 +137,7 @@ function SetButton(button, row) {
 function ToggleShipped(row) {
     var button = Element('input', { type: 'button', click: function() {
         row.shipped = row.shipped == "Pending" ? "Shipped " + FormatDate(new Date()) : "Pending";
-        Request('store', { row: row }, function(data) {
+        Request('store_row', { row: row }, function(data) {
             SetButton(button, row);
         });
     }});
@@ -181,7 +182,35 @@ var columns = [
     { header: 'Notes',      input: Field('notes', TextAreaInput),        output: Field('notes', MultilineTextOutput) },
 ];
 
-var protoRow = { name: '', address: '', order: { bags: '', jars: '', packs: '', forks: '' } };
+var protoOrder = { bags: '', jars: '', packs: '', forks: '' };
+
+var protoRow = { name: '', address: '', order: protoOrder };
+
+var inventory = protoOrder;
+
+function UpdateInventoryDisplay() {
+    $("#current_inventory").empty();
+    $("#current_inventory").append(TableVector({ bags: TextOutput, jars: TextOutput, packs: TextOutput, forks: TextOutput })(inventory));
+    var order = orderInput(protoOrder);
+    $("#inventory_adder").empty();
+    $("#inventory_adder").append(order);
+    var button = Element("input", { type: "button", value: "Add Inventory", click: function () {
+        inventory = AddVectors(inventory, order.val());
+        UpdateInventory();
+    }});
+    $("#inventory_adder").append(button);
+}
+
+function UpdateInventory() {
+    Request("store_global", { id: "inventory", value: inventory }, function() {
+        UpdateInventoryDisplay();
+    });
+}
+
+function OnAddRow(row) {
+    inventory = SubtractVectors(inventory, row.order);
+    UpdateInventory();
+}
 
 function UID() {
     var result = '';
@@ -210,8 +239,9 @@ function InputRow(row) {
             var lit = LiteralRow(row);
             lit.addClass("unsubmitted");
             p.append(lit);
+            OnAddRow(row);
             p.append(InputRow());
-            Request('store', { row: row }, function(data) {
+            Request('store_row', { row: row }, function(data) {
                 lit.removeClass("unsubmitted");
             });
         }})));
@@ -235,6 +265,20 @@ function MakeTable() {
     return Element('table', {}, Element('thead', {}, headtr), Element('tbody', {}));
 }
 
+function AddVectors(a,b) {
+    var r = {};
+    for (i in a) { r[i] = 1*a[i] }
+    for (i in b) { r[i] += 1*b[i] }
+    return r;
+}
+
+function SubtractVectors(a,b) {
+    var r = {};
+    for (i in a) { r[i] = 1*a[i] }
+    for (i in b) { r[i] -= 1*b[i] }
+    return r;
+}
+
 $(function() {
     var loading = Element('span', { text: 'Loading database' });
     var currentInputRow;
@@ -245,11 +289,13 @@ $(function() {
         loading.remove();
         table = MakeTable();
         $('#content').append(table);
-        for (var i in db) {
-            table.append(LiteralRow(db[i]));
+        inventory = db.globals.inventory || protoOrder;
+        for (var i in db.rows) {
+            table.append(LiteralRow(db.rows[i]));
         }
         currentInputRow = InputRow();
         table.append(currentInputRow);
+        UpdateInventoryDisplay();
     });
 
     $('#fetch_transaction').click(function () {
@@ -274,6 +320,13 @@ $(function() {
   </script>
  </head>
  <body>
+  <h1>Inventory</h1>
+  <div style="overflow: hidden">
+   <div id="current_inventory" class="inventory"></div>
+   <div style="float: left; width: 0.5in">&nbsp;</div>
+   <div id="inventory_adder" class="inventory"></div>
+  </div>
+  <h1>Orders</h1>
   <div id="content">
   </div>
   <p><b>From PayPal transaction ID:</b><input type="text" id="transaction_id" /><input type="button" id="fetch_transaction" value="Go fetch!" /></p>

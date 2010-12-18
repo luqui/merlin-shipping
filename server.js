@@ -16,7 +16,7 @@ var database = function() {
     }
     catch (e) {
         console.log("Reading database failed (" + e + ").  Initializing new");
-        return {};
+        return { rows: {}, globals: {} };
     }
 }();
 
@@ -36,9 +36,16 @@ var merge = function(a,b) {
 }
 
 var commands = {
-    store: function(req, cc) {
-        database[req.row.id] = req.row;
+    store_row: function(req, cc) {
+        database.rows[req.row.id] = req.row;
         cc({});
+    },
+    store_global: function(req, cc) {
+        database.globals[req.id] = req.value;
+        cc({});
+    },
+    fetch_global: function(req, cc) {
+        cc(database.globals[req.id]);
     },
     dump: function(req, cc) {
         cc(database);

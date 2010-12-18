@@ -20,13 +20,18 @@ var database = function() {
     }
 }();
 
-process.on('exit', function() {
+var writeDatabase = function () { 
     console.log("Writing database");
-    fs.writeFileSync("database.json", JSON.stringify(database));
+    fs.writeFileSync("database.json", JSON.stringify(database)); 
+}
+
+process.on('exit', function() {
+    writeDatabase();
 }); 
 
 process.on('SIGINT', process.exit);
 process.on('SIGTERM', process.exit);
+process.on('SIGHUP', writeDatabase);
 
 var merge = function(a,b) {
     var r = {};

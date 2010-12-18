@@ -148,6 +148,11 @@ function TextAreaInput(text) {
     return Element('textarea', { text: text });
 }
 
+function CurrentDateInput(text) {
+    var dat = FormatDate(new Date());
+    return WithValue(dat, Element("span", { text: dat }));
+}
+
 var orderInput = function () {
     var inp = SizedTextInput(3);
     return TableVector({ bags: inp, jars: inp, packs: inp, forks: inp });
@@ -168,11 +173,12 @@ var addressOutput = function(row) {
 };
 
 var columns = [
-    { header: 'Name',    input: Field('name',    TextInput),  output: Field('name', TextOutput) },
-    { header: 'Address', input: Field('address', addressInput), output: addressOutput },
-    { header: 'Order',   input: Field('order',   orderInput), output: Field('order', CompactVector) },
-    { header: 'Status',  input: ConstInput({shipped: "Pending"}), output: ToggleShipped },
-    { header: 'Notes',   input: Field('notes', TextAreaInput), output: Field('notes', MultilineTextOutput) },
+    { header: 'Order Date', input: Field('orderDate', CurrentDateInput), output: Field('orderDate', TextOutput) },
+    { header: 'Name',       input: Field('name',    TextInput),          output: Field('name', TextOutput) },
+    { header: 'Address',    input: Field('address', addressInput),       output: addressOutput },
+    { header: 'Order',      input: Field('order',   orderInput),         output: Field('order', CompactVector) },
+    { header: 'Status',     input: ConstInput({shipped: "Pending"}),     output: ToggleShipped },
+    { header: 'Notes',      input: Field('notes', TextAreaInput),        output: Field('notes', MultilineTextOutput) },
 ];
 
 var protoRow = { name: '', address: '', order: { bags: '', jars: '', packs: '', forks: '' } };

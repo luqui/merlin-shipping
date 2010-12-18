@@ -20,6 +20,8 @@
     .pending     { background: #fa7 }
     tr.unsubmitted { background: gray }
     textarea { height: 12ex; width: 100% }
+    a { text-decoration: none }
+    a:hover { text-decoration: underline }
   </style>
 
   <script>
@@ -55,6 +57,12 @@ function WithValue(value, elt)
 
 function TextInput(val) {
     return Element('input', { type: 'text', value: val });
+}
+
+function SizedTextInput(size) {
+    return function(val) {
+        return Element('input', { type: 'text', value: val, size: size });
+    };
 }
 
 function TextOutput(val) {
@@ -140,11 +148,28 @@ function TextAreaInput(text) {
     return Element('textarea', { text: text });
 }
 
-var orderInput = TableVector({ bags: TextInput, jars: TextInput, packs: TextInput, forks: TextInput });
+var orderInput = function () {
+    var inp = SizedTextInput(3);
+    return TableVector({ bags: inp, jars: inp, packs: inp, forks: inp });
+}();
+var addressInput = TableVector({ address: TextInput, city: TextInput, state: TextInput, zip: TextInput });
+var addressOutput = function(row) { 
+    var addr = row.address;
+    var out = MultilineTextOutput(addr.address + "\n" + addr.city + ", " + addr.state + " " + addr.zip);
+    var enc = encodeURIComponent;
+    var url = "https://sss-web.usps.com/cns/labelInformationView.do" 
+            + "?deliveryFullName=" + enc(row.name)
+            + "&deliveryAddressOne=" + enc(addr.address)
+            + "&deliveryCity=" + enc(addr.city)
+            + "&deliveryState=" + enc(addr.state)
+            + "&deliveryZipcode=" + enc(addr.zip)
+            + "&deliveryRefNbr=" + enc(row.id);
+    return WithValue(out.val(), Element("a", { href: url, target: "_blank" }, out));
+};
 
 var columns = [
     { header: 'Name',    input: Field('name',    TextInput),  output: Field('name', TextOutput) },
-    { header: 'Address', input: Field('address', TextAreaInput), output: Field('address', MultilineTextOutput) },
+    { header: 'Address', input: Field('address', addressInput), output: addressOutput },
     { header: 'Order',   input: Field('order',   orderInput), output: Field('order', CompactVector) },
     { header: 'Status',  input: ConstInput({shipped: "Pending"}), output: ToggleShipped },
     { header: 'Notes',   input: Field('notes', TextAreaInput), output: Field('notes', MultilineTextOutput) },
@@ -154,7 +179,7 @@ var protoRow = { name: '', address: '', order: { bags: '', jars: '', packs: '', 
 
 function UID() {
     var result = '';
-    for (var i = 0; i < 32; ++i) {
+    for (var i = 0; i < 10; ++i) {
         result += Math.floor(Math.random()*16).toString(16);
     }
     return result;
@@ -229,7 +254,7 @@ $(function() {
                 if (currentInputRow) { currentInputRow.remove(); }
                 currentInputRow = InputRow($.extend({}, protoRow, { 
                     name: transaction.SHIPTONAME, 
-                    address: transaction.SHIPTOSTREET + "\n" + transaction.SHIPTOCITY + ", " + transaction.SHIPTOSTATE + " " + transaction.SHIPTOZIP
+                    address: { address: transaction.SHIPTOSTREET, city: transaction.SHIPTOCITY, state: transaction.SHIPTOSTATE, zip: transaction.SHIPTOZIP },
                 }));
                 table.append(currentInputRow);
             }

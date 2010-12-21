@@ -176,7 +176,8 @@ var addressInput = TableVector({ address: TextInput, city: TextInput, state: Tex
 var addressOutput = function(row) { 
     var addr = row.address;
     if (!addr) { return Element('span') }
-    var out = MultilineTextOutput(addr.address + "\n" + addr.city + ", " + addr.state + " " + addr.zip + "\n" + IDToCountry(addr.country));
+    var guard = function(x) { if (typeof(x) == "undefined") { return "" } else { return x } }
+    var out = MultilineTextOutput(guard(addr.address) + "\n" + guard(addr.city) + ", " + guard(addr.state) + " " + guard(addr.zip) + "\n" + IDToCountry(addr.country));
     var enc = function(n, i) { if (typeof(i) == "undefined") { return "" } else { return n + "=" + encodeURIComponent(i) } }
     var url = "https://sss-web.usps.com/cns/labelInformationView.do?" 
             + enc("&deliveryCountry", addr.country)

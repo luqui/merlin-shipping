@@ -23,6 +23,7 @@
     a { text-decoration: none }
     a:hover { text-decoration: underline }
     div.inventory { float: left }
+    input.bigbutton { height: 64px; width: 64px }
   </style>
 
   <script>
@@ -161,6 +162,7 @@ var orderInput = function () {
 var addressInput = TableVector({ address: TextInput, city: TextInput, state: TextInput, zip: TextInput });
 var addressOutput = function(row) { 
     var addr = row.address;
+    if (!addr) { return Element('span') }
     var out = MultilineTextOutput(addr.address + "\n" + addr.city + ", " + addr.state + " " + addr.zip);
     var enc = encodeURIComponent;
     var url = "https://sss-web.usps.com/cns/labelInformationView.do" 
@@ -173,18 +175,26 @@ var addressOutput = function(row) {
     return WithValue(out.val(), Element("a", { href: url, target: "_blank" }, out));
 };
 
+var costsInput = function () {
+    var inp = SizedTextInput(5);
+    return TableVector({ primary: inp, fee: inp, shipping: inp, tax: inp });
+}();
+
 var columns = [
     { header: 'Order Date', input: Field('orderDate', CurrentDateInput), output: Field('orderDate', TextOutput) },
     { header: 'Name',       input: Field('name',    TextInput),          output: Field('name', TextOutput) },
     { header: 'Address',    input: Field('address', addressInput),       output: addressOutput },
     { header: 'Order',      input: Field('order',   orderInput),         output: Field('order', CompactVector) },
+    { header: 'Costs',      input: Field('costs', costsInput),           output: Field('costs', CompactVector) },
     { header: 'Status',     input: ConstInput({shipped: "Pending"}),     output: ToggleShipped },
     { header: 'Notes',      input: Field('notes', TextAreaInput),        output: Field('notes', MultilineTextOutput) },
 ];
 
 var protoOrder = { bags: '', jars: '', packs: '', forks: '' };
 
-var protoRow = { name: '', address: '', order: protoOrder };
+var protoCosts = { primary: '', fee: '', shipping: '', tax: '' };
+
+var protoRow = { name: '', address: '', order: protoOrder, costs: protoCosts };
 
 var inventory = protoOrder;
 
@@ -229,7 +239,7 @@ function InputRow(row) {
         tr.append(Element('td', {}, elts[i]));
     }
     tr.append(Element('td', {}, 
-        Element('input', { type: 'button', click: function() {
+        Element('input', { type: 'button', class: 'bigbutton', value: 'Submit', click: function() {
             var row = { id: UID() };
             for (var i in columns) {
                 $.extend(row, elts[i].val());
@@ -302,11 +312,23 @@ $(function() {
         var tid = $('#transaction_id').val().replace(/^\s*/,'').replace(/\s*$/,'');
         Request('get_paypal_transaction', { transaction_id: tid }, function (transaction) {
             if (transaction.ACK == "Success") {
+                console.log(transaction);
                 $('#paypal_status').text('');
                 if (currentInputRow) { currentInputRow.remove(); }
                 currentInputRow = InputRow($.extend({}, protoRow, { 
                     name: transaction.SHIPTONAME, 
-                    address: { address: transaction.SHIPTOSTREET, city: transaction.SHIPTOCITY, state: transaction.SHIPTOSTATE, zip: transaction.SHIPTOZIP },
+                    address: { 
+                        address: transaction.SHIPTOSTREET, 
+                        city: transaction.SHIPTOCITY, 
+                        state: transaction.SHIPTOSTATE, 
+                        zip: transaction.SHIPTOZIP, 
+                    },
+                    costs: { 
+                        primary: transaction.L_AMT0,
+                        fee: transaction.FEEAMT, 
+                        tax: transaction.TAXAMT, 
+                        shipping: (transaction.AMT - transaction.L_AMT0 - transaction.TAXAMT).toFixed(2),
+                    },
                 }));
                 table.append(currentInputRow);
             }

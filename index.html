@@ -205,6 +205,10 @@ var columns = [
     { header: 'Notes',      input: Field('notes', TextAreaInput),        output: Field('notes', MultilineTextOutput) },
 ];
 
+if (!/\?costs/.test(window.location.href)) {
+    columns.splice(4,1);
+}
+
 var protoOrder = { bags: '', jars: '', packs: '', forks: '' };
 
 var protoCosts = { primary: '', fee: '', shipping: '', tax: '' };

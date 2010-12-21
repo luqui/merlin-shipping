@@ -28,8 +28,8 @@
 
   <script>
 
-//var ip = '184.73.249.123:8080';
-var ip = '127.0.0.1:8080';
+var ip = '184.73.249.123:8080';
+//var ip = '127.0.0.1:8080';
 
 function Request(cmd, arg, callback) {
     $.getJSON('http://' + ip + '/' + cmd + '?callback=?', arg, callback);
@@ -182,7 +182,7 @@ var costsInput = function () {
 
 var columns = [
     { header: 'Order Date', input: Field('orderDate', CurrentDateInput), output: Field('orderDate', TextOutput) },
-    { header: 'Name',       input: Field('name',    TextInput),          output: Field('name', TextOutput) },
+    { header: 'Name',       input: Field('name',    TextAreaInput),      output: Field('name', MultilineTextOutput) },
     { header: 'Address',    input: Field('address', addressInput),       output: addressOutput },
     { header: 'Order',      input: Field('order',   orderInput),         output: Field('order', CompactVector) },
     { header: 'Costs',      input: Field('costs', costsInput),           output: Field('costs', CompactVector) },

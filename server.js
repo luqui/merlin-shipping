@@ -25,6 +25,8 @@ var writeDatabase = function () {
     fs.writeFileSync("database.json", JSON.stringify(database)); 
 }
 
+setInterval(writeDatabase, 60*60*1000);
+
 process.on('exit', function() {
     writeDatabase();
 }); 

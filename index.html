@@ -267,9 +267,9 @@ function InputRow(row) {
             tr.remove();
             var lit = LiteralRow(row);
             lit.addClass("unsubmitted");
-            p.append(lit);
+            p.prepend(lit);
             OnAddRow(row);
-            p.append(InputRow());
+            p.prepend(InputRow());
             Request('store_row', { row: row }, function(data) {
                 lit.removeClass("unsubmitted");
             });
@@ -320,10 +320,10 @@ $(function() {
         $('#content').append(table);
         inventory = db.globals.inventory || protoOrder;
         for (var i in db.rows) {
-            table.append(LiteralRow(db.rows[i]));
+            table.prepend(LiteralRow(db.rows[i]));
         }
         currentInputRow = InputRow();
-        table.append(currentInputRow);
+        table.prepend(currentInputRow);
         UpdateInventoryDisplay();
     });
 
@@ -349,7 +349,7 @@ $(function() {
                         shipping: (transaction.AMT - transaction.L_AMT0 - transaction.TAXAMT).toFixed(2),
                     },
                 }));
-                table.append(currentInputRow);
+                table.prepend(currentInputRow);
             }
             else {
                 $('#paypal_status').text(transaction.L_LONGMESSAGE0);
@@ -368,12 +368,12 @@ $(function() {
    <div id="inventory_adder" class="inventory"></div>
   </div>
   <h1>Orders</h1>
-  <div id="content">
-  </div>
   <p><b>From PayPal transaction ID:</b><input type="text" id="transaction_id" /><input type="button" id="fetch_transaction" value="Go fetch!" /></p>
   <p style="color: red" id="paypal_status"></p>
+  <div id="content">
+  </div>
 
-<select id="deliveryCountry" style="display: inline; width: 12em">
+<select id="deliveryCountry" style="display: none; width: 12em">
 <option value="1" selected="selected">United States</option>
 <option value="10440">Abu Dhabi (United Arab Emirates)</option>
 <option value="10345">Admiralty Islands (Papua New Guinea)</option>

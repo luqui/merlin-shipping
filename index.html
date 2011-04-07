@@ -28,11 +28,11 @@
 
   <script>
 
-var ip = '184.73.249.123:8080';
-//var ip = '127.0.0.1:8080';
+//var ip = '184.73.249.123:8080';
+var ip = '127.0.0.1:8080';
 
 function Request(cmd, arg, callback) {
-    $.getJSON('http://' + ip + '/' + cmd + '?callback=?', arg, callback);
+    $.getJSON('http://' + ip + '/' + cmd + '?callback=?', {q: JSON.stringify(arg)}, callback);
 }
 
 function Element(name, attrs) {

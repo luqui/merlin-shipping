@@ -88,13 +88,15 @@ var errorOut = function (res, msg) {
 }
 
 http.createServer(function (req, res) {
+    console.log(new Date(), req.url);
     var match = /^\/(\w+)\?(.*)/.exec(req.url);
     if (match) {
         var req = querystring.parse(match[2]);
-        console.log("Got request: ", req);
+        var arg = JSON.parse(req.q);
+        console.log("Arg: ", arg);
         var cmd = commands[match[1]];
         if (cmd) {
-            cmd(req, function (ret) {
+            cmd(arg, function (ret) {
                 res.writeHead(200, {'Content-type': 'text/javascript'});
                 res.end(req.callback + "(" + JSON.stringify(ret) + ")");
             });

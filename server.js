@@ -1,11 +1,12 @@
+var sys = require('sys');
 var path = require('path');
 var http = require('http');
+var https = require('https');
 var url = require('url');
 var fs = require('fs');
 var querystring = require('querystring');
 
 var credentials = function() {
-    console.log("Loading credentials");
     return JSON.parse(fs.readFileSync("api-keys"));
 }();
 
@@ -59,23 +60,24 @@ var commands = {
     },    
     get_paypal_transaction: function(input, cc) {
         var req = merge(credentials, {
-            VERSION: '51.0',
+            VERSION: '69.0',
             METHOD: 'GetTransactionDetails',
             TRANSACTIONID: input.transaction_id,
         });
         var query = querystring.stringify(req);
-        var client = http.createClient(443, 'api-3t.paypal.com', true);
-        var req = client.request('POST', '/nvp', {
-            'Host': 'api-3t.paypal.com',
-            'Content-Length': query.length
-        });
-        req.write(query);
-        req.end();
-        req.on('response', function(res) {
+        var req = https.get({
+            host: 'api-3t.paypal.com',
+            port: 443,
+            path: '/nvp?' + query,
+        }, function(res) {
             res.on('data', function (chunk) {
-                cc(querystring.parse(chunk));
+                var parsed = querystring.parse(chunk.toString());
+                cc(parsed);
             });
-        });
+	}).on('error', function(e) {
+            console.log("swallowing error: ", e);
+            cc("ERROR " + e);
+        }); 
     },
 };
 
@@ -89,6 +91,7 @@ http.createServer(function (req, res) {
     var match = /^\/(\w+)\?(.*)/.exec(req.url);
     if (match) {
         var req = querystring.parse(match[2]);
+        console.log("Got request: ", req);
         var cmd = commands[match[1]];
         if (cmd) {
             cmd(req, function (ret) {
